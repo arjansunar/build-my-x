@@ -4,7 +4,7 @@ import socket  # noqa: F401
 
 CRLF = "\r\n"
 
-REQUEST_MATCHER = r"(?P<method>GET|POST) (?P<target>/[\w.]+)"
+REQUEST_MATCHER = r"(?P<method>GET|POST) (?P<target>/[\w.]*)"
 
 
 def response_builder(status: int, reason_phrase: str, version="HTTP/1.1"):
