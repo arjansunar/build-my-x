@@ -1,19 +1,90 @@
+from dataclasses import dataclass
 import re
-import socket  # noqa: F401
+import socket
+from typing import Callable, Literal, Optional  # noqa: F401
 
 
 CRLF = "\r\n"
 
-REQUEST_MATCHER = r"(?P<method>GET|POST) (?P<target>/[\w.]*)"
+REQUEST_MATCHER = r"(?P<method>GET|POST) (?P<resource>/[\w./]*)"
+PATH_PARAM_MATCHER = r"\{(?P<path_param>\w+)\}"
 
 
-def response_builder(status: int, reason_phrase: str, version="HTTP/1.1"):
-    return f"{version} {status} {reason_phrase}{CRLF}{CRLF}"
+@dataclass
+class Header:
+    content_type: str
+    content_length: int
+
+    def dict(self):
+        return {
+            "Content-Type": self.content_type,
+            "Content-Length": self.content_length,
+        }
+
+    def headers(self):
+        return CRLF.join([f"{key}: {value}" for key, value in self.dict().items()])
 
 
-AVAILABLE_ROUTES = [
-    "/",
-]
+def response_builder(
+    status: int,
+    reason_phrase: str,
+    header: Optional[Header] = None,
+    body: Optional[str] = None,
+    version="HTTP/1.1",
+):
+    res = f"{version} {status} {reason_phrase}{CRLF}{header.headers() if header else ''}{CRLF}{CRLF}"
+    if body:
+        res += f"{body}"
+    return res
+
+
+@dataclass
+class Request:
+    resource: str
+    method: Literal["POST", "GET"]
+    remaining_path: Optional[str] = None
+    params: dict[str, str] = {}
+
+
+class Router:
+    route_map: dict[str, Callable[[Request], bytes]] = {}
+
+    def add_route(self, path: str, handler: Callable[[Request], bytes]) -> "Router":
+        self.route_map[path] = handler
+        return self
+
+    def run(self, request: Request) -> bytes:
+        for path, handler in self.route_map.items():
+            path_param_match = re.findall(PATH_PARAM_MATCHER, path)
+            has_path_param = bool(path_param_match)
+            if has_path_param:
+                for key in path_param_match:
+                    # TODO: find value for given key
+                    request.params[key] = "value"
+
+            if request.resource.startswith(path):
+                remaining_path = request.resource[len(path) :]
+                if remaining_path:
+                    request.remaining_path = remaining_path
+                return handler(request)
+        # none path matched
+        return response_builder(404, "Not Found").encode()
+
+
+router = Router()
+router.add_route(
+    "/echo/{payload}",
+    lambda request: response_builder(
+        200,
+        "OK",
+        header=Header(
+            content_type="text/plain",
+            content_length=len(request.remaining_path) if request.remaining_path else 0,
+        ),
+        body=request.remaining_path,
+    ).encode(),
+)
+router.add_route("/", lambda request: response_builder(200, "OK").encode())
 
 
 def main():
@@ -22,13 +93,14 @@ def main():
     message = conn.recv(1024).decode()
     request = message.split(CRLF)
     match = re.search(REQUEST_MATCHER, request[0])
+
     if match:
         grouped = match.groupdict()
-        known_route = grouped.get("target") in AVAILABLE_ROUTES
-        if not known_route:
-            response = response_builder(404, "Not Found").encode()
-        else:
-            response = response_builder(200, "OK").encode()
+        request = Request(
+            resource=grouped.get("resource", ""),
+            method=grouped.get("method", ""),  # type: ignore
+        )
+        response = router.run(request)
     else:
         response = response_builder(500, "Server Error").encode()
     conn.sendall(response)
