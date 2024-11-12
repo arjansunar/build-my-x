@@ -1,7 +1,7 @@
 import re
 import socket
 from dataclasses import dataclass
-from typing import Callable, Literal, cast 
+from typing import Callable, Literal, cast
 
 CRLF = "\r\n"
 
@@ -29,7 +29,7 @@ def response_builder(
     reason_phrase: str,
     header: Header | None = None,
     body: str | None = None,
-    version: str="HTTP/1.1",
+    version: str = "HTTP/1.1",
 ):
     res = f"{version} {status} {reason_phrase}{CRLF}{header.headers() if header else ''}{CRLF}{CRLF}"
     if body:
@@ -95,7 +95,7 @@ def main():
         grouped = match.groupdict()
         request = Request(
             resource=grouped.get("resource", ""),
-            method=cast(Literal["GET", "POST"], grouped.get("method", "")) ,  # type: ignore
+            method=cast(Literal["GET", "POST"], grouped.get("method", "")),  # type: ignore
         )
         response = router.run(request)
     else:
