@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 import re
 import socket
-from typing import Callable, Literal, Optional  # noqa: F401
-
+from dataclasses import dataclass
+from typing import Callable, Literal, cast 
 
 CRLF = "\r\n"
 
@@ -28,9 +27,9 @@ class Header:
 def response_builder(
     status: int,
     reason_phrase: str,
-    header: Optional[Header] = None,
-    body: Optional[str] = None,
-    version="HTTP/1.1",
+    header: Header | None = None,
+    body: str | None = None,
+    version: str="HTTP/1.1",
 ):
     res = f"{version} {status} {reason_phrase}{CRLF}{header.headers() if header else ''}{CRLF}{CRLF}"
     if body:
@@ -42,16 +41,15 @@ def response_builder(
 class Request:
     resource: str
     method: Literal["POST", "GET"]
-    remaining_path: Optional[str] = None
+    remaining_path: str | None = None
     params: dict[str, str] = {}
 
 
 class Router:
     route_map: dict[str, Callable[[Request], bytes]] = {}
 
-    def add_route(self, path: str, handler: Callable[[Request], bytes]) -> "Router":
+    def add_route(self, path: str, handler: Callable[[Request], bytes]):
         self.route_map[path] = handler
-        return self
 
     def run(self, request: Request) -> bytes:
         for path, handler in self.route_map.items():
@@ -93,12 +91,11 @@ def main():
     message = conn.recv(1024).decode()
     request = message.split(CRLF)
     match = re.search(REQUEST_MATCHER, request[0])
-
     if match:
         grouped = match.groupdict()
         request = Request(
             resource=grouped.get("resource", ""),
-            method=grouped.get("method", ""),  # type: ignore
+            method=cast(Literal["GET", "POST"], grouped.get("method", "")) ,  # type: ignore
         )
         response = router.run(request)
     else:
