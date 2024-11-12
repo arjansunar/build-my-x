@@ -9,6 +9,12 @@ class Router:
     def add_route(self, path: str, handler: Callable[[request.Request], bytes]):
         self.route_map[path] = handler
 
+    def route(self, path: str):
+        def decorator(func: Callable[[request.Request], bytes]):
+            self.route_map[path] = func
+            return func  # Return the decorated function
+        return decorator
+
     def run(self, request: request.Request) -> bytes:
         for path, handler in self.route_map.items():
             match = re.search(path, request.resource)
