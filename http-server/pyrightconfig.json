@@ -3,9 +3,5 @@
   "useLibraryCodeForTypes": true,
   "reportMissingImports": true,
   "reportMissingTypeStubs": true,
-  "include": ["./**/*.py"],
-  "exclude": [".venv"],
-  "venvPath": "./",
-  "venv": ".venv",
   "extraPaths": ["./app"]
 }
