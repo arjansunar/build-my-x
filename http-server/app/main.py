@@ -1,37 +1,11 @@
 import re
 import socket
-from dataclasses import dataclass, field
-from typing import Callable, Literal, cast
-from app import constants, request, response
+from typing import Literal, cast
+from app import constants, request, response, router
 
 
-
-@dataclass
-class Request:
-    resource: str
-    method: Literal["POST", "GET"]
-    params: dict[str, str] = field(default_factory=dict)
-    header: request.Header | None = None
-
-
-class Router:
-    route_map: dict[str, Callable[[Request], bytes]] = {}
-
-    def add_route(self, path: str, handler: Callable[[Request], bytes]):
-        self.route_map[path] = handler
-
-    def run(self, request: Request) -> bytes:
-        for path, handler in self.route_map.items():
-            match = re.search(path, request.resource)
-            if match:
-                request.params = match.groupdict()
-                return handler(request)
-        # none path matched
-        return response.response_builder(404, "Not Found").encode()
-
-
-router = Router()
-router.add_route(
+app = router.Router()
+app.add_route(
     path=r"^/echo/(?P<path_param>\w+)$",
     handler=lambda request: response.response_builder(
         200,
@@ -43,7 +17,7 @@ router.add_route(
         body=request.params.get("path_param", ""),
     ).encode(),
 )
-router.add_route(r"^/$", lambda request: response.response_builder(200, "OK").encode())
+app.add_route(r"^/$", lambda request: response.response_builder(200, "OK").encode())
 
 
 def main():
@@ -58,11 +32,11 @@ def handle_connection(conn: socket.socket):
     match = re.search(constants.REQUEST_MATCHER, req[0])
     if match:
         grouped = match.groupdict()
-        req = Request(
+        req = request.Request(
             resource=grouped.get("resource", ""),
             method=cast(Literal["GET", "POST"], grouped.get("method", "")),  # type: ignore
         )
-        res = router.run(req)
+        res = app.run(req)
     else:
         res =response.response_builder(500, "Server Error").encode()
     conn.sendall(res)
