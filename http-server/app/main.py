@@ -1,6 +1,6 @@
 import re
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Literal, cast
 
 CRLF = "\r\n"
@@ -42,7 +42,7 @@ class Request:
     resource: str
     method: Literal["POST", "GET"]
     remaining_path: str | None = None
-    params: dict[str, str] = {}
+    params: dict[str, str] = field(default_factory=dict)
 
 
 class Router:
@@ -53,17 +53,9 @@ class Router:
 
     def run(self, request: Request) -> bytes:
         for path, handler in self.route_map.items():
-            path_param_match = re.findall(PATH_PARAM_MATCHER, path)
-            has_path_param = bool(path_param_match)
-            if has_path_param:
-                for key in path_param_match:
-                    # TODO: find value for given key
-                    request.params[key] = "value"
-
-            if request.resource.startswith(path):
-                remaining_path = request.resource[len(path) :]
-                if remaining_path:
-                    request.remaining_path = remaining_path
+            match = re.search(path, request.resource)
+            if match:
+                request.params = match.groupdict()
                 return handler(request)
         # none path matched
         return response_builder(404, "Not Found").encode()
@@ -71,24 +63,25 @@ class Router:
 
 router = Router()
 router.add_route(
-    "/echo/{payload}",
-    lambda request: response_builder(
+    path=r"^/echo/(?P<path_param>\w+)$",
+    handler=lambda request: response_builder(
         200,
         "OK",
         header=Header(
             content_type="text/plain",
-            content_length=len(request.remaining_path) if request.remaining_path else 0,
+            content_length=len(request.params.get("path_param", "")),
         ),
-        body=request.remaining_path,
+        body=request.params.get("path_param", ""),
     ).encode(),
 )
-router.add_route("/", lambda request: response_builder(200, "OK").encode())
+router.add_route(r"^/$", lambda request: response_builder(200, "OK").encode())
 
 
 def main():
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
     conn, _ = server_socket.accept()  # wait for client
     handle_connection(conn)
+
 
 def handle_connection(conn: socket.socket):
     message = conn.recv(1024).decode()
