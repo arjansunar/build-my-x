@@ -1,5 +1,6 @@
 import re
 import socket
+import threading
 from typing import Literal, cast
 from app import constants, request, response, router
 
@@ -35,9 +36,17 @@ app.add_route(r"^/$", lambda request: response.response_builder(200, "OK").encod
 
 
 def main():
-    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    conn, _ = server_socket.accept()  # wait for client
-    handle_connection(conn)
+    host = "localhost"
+    port = 4221
+    server_socket = socket.create_server((host, port), reuse_port=True)
+    print(f"Server listening on {host}:{port}...")
+    try:
+        while True: 
+            conn, _ = server_socket.accept()  # wait for client
+            client_thread = threading.Thread(target=handle_connection, args=(conn,))
+            client_thread.start()
+    except KeyboardInterrupt:
+        print("\nShutting down server")
 
 
 def handle_connection(conn: socket.socket):
