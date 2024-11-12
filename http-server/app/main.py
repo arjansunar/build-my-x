@@ -88,6 +88,9 @@ router.add_route("/", lambda request: response_builder(200, "OK").encode())
 def main():
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
     conn, _ = server_socket.accept()  # wait for client
+    handle_connection(conn)
+
+def handle_connection(conn: socket.socket):
     message = conn.recv(1024).decode()
     request = message.split(CRLF)
     match = re.search(REQUEST_MATCHER, request[0])
