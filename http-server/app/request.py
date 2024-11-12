@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from app import constants, utils
+
+if TYPE_CHECKING:
+    from main import Env
 
 
 def extract_request_parts(message: str):
@@ -32,5 +35,6 @@ class Header:
 class Request:
     resource: str
     method: Literal["POST", "GET"]
+    env: "Env"
     params: dict[str, str] = field(default_factory=dict)
     header: Header | None = None
