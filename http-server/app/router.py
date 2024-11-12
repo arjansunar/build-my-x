@@ -12,6 +12,7 @@ class Router:
     def run(self, request: request.Request) -> bytes:
         for path, handler in self.route_map.items():
             match = re.search(path, request.resource)
+            # pprint({"req": request, "path": path})
             if match:
                 request.params = match.groupdict()
                 return handler(request)

@@ -17,6 +17,20 @@ app.add_route(
         body=request.params.get("path_param", ""),
     ).encode(),
 )
+
+
+app.add_route(
+    r"^/user-agent$",
+    lambda request: response.response_builder(
+        200,
+        "OK",
+        body=request.header.user_agent if request.header else None,
+        header=response.Header(
+            content_type="text/plain",
+            content_length=len(request.header.user_agent or "" if request.header else ""),
+        ),
+    ).encode(),
+)
 app.add_route(r"^/$", lambda request: response.response_builder(200, "OK").encode())
 
 
@@ -36,11 +50,11 @@ def handle_connection(conn: socket.socket):
     match = re.search(constants.REQUEST_LINE_MATCHER, request_line)
     if match:
         grouped = match.groupdict()
-        headers_line = msg_req[1:] 
+        headers_line = msg_req[1:]
         req = request.Request(
             resource=grouped.get("resource", ""),
             method=cast(Literal["GET", "POST"], grouped.get("method", "")),  # type: ignore
-            header= request.Header.from_list(headers_line)
+            header=request.Header.from_list(headers_line),
         )
         res = app.run(req)
     else:
