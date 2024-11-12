@@ -28,17 +28,23 @@ def main():
 
 def handle_connection(conn: socket.socket):
     message = conn.recv(1024).decode()
-    req = message.split(constants.CRLF)
-    match = re.search(constants.REQUEST_MATCHER, req[0])
+    message_parts = message.split(constants.CRLF * 2)
+    assert len(message_parts) > 0
+    msg_req = message_parts[0].split(constants.CRLF)
+    # msg_body =utils.get(message_parts, 1)  # noqa: F841
+    request_line = msg_req[0]
+    match = re.search(constants.REQUEST_LINE_MATCHER, request_line)
     if match:
         grouped = match.groupdict()
+        headers_line = msg_req[1:] 
         req = request.Request(
             resource=grouped.get("resource", ""),
             method=cast(Literal["GET", "POST"], grouped.get("method", "")),  # type: ignore
+            header= request.Header.from_list(headers_line)
         )
         res = app.run(req)
     else:
-        res =response.response_builder(500, "Server Error").encode()
+        res = response.response_builder(500, "Server Error").encode()
     conn.sendall(res)
     conn.close()
 

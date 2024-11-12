@@ -14,7 +14,9 @@ class Header:
         }
 
     def headers(self):
-        return constants.CRLF.join([f"{key}: {value}" for key, value in self.dict().items()])
+        return constants.CRLF.join(
+            [f"{key}: {value}" for key, value in self.dict().items()]
+        )
 
 
 def response_builder(
