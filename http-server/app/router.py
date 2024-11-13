@@ -13,6 +13,7 @@ class Router:
         def decorator(func: Callable[[request.Request], bytes]):
             self.route_map[path] = func
             return func  # Return the decorated function
+
         return decorator
 
     def run(self, request: request.Request) -> bytes:

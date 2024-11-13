@@ -30,3 +30,18 @@ def response_builder(
     if body:
         res += f"{body}"
     return res
+
+
+@dataclass
+class Response:
+    status: int
+    reason_phrase: str
+    header: Header | None = None
+    body: str | None = None
+    version: str = "HTTP/1.1"
+
+    def build(self):
+        res = f"{self.version} {self.status} {self.reason_phrase}{constants.CRLF}{self.header.headers() if self.header else ''}{constants.CRLF}{constants.CRLF}"
+        if self.body:
+            res += f"{self.body}"
+        return res

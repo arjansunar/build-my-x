@@ -26,9 +26,7 @@ class Header:
             ), f"headers must be in <key>:<value> format got {d}"
             key, value = split_header_line
             headers[key] = value
-        return cls(
-            host=headers.get("Host"), user_agent=headers.get("User-Agent")
-        )
+        return cls(host=headers.get("Host"), user_agent=headers.get("User-Agent"))
 
 
 @dataclass
