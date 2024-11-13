@@ -12,7 +12,7 @@ app = router.Router()
 
 @app.route(path=r"^/echo/(?P<path_param>\w+)$")
 def echo(request: request.Request):
-    return response.response_builder(
+    return response.Response(
         200,
         "OK",
         header=response.Header(
@@ -20,12 +20,12 @@ def echo(request: request.Request):
             content_length=len(request.params.get("path_param", "")),
         ),
         body=request.params.get("path_param", ""),
-    ).encode()
+    )
 
 
 @app.route(r"^/user-agent$")
 def user_agent_echo(request: request.Request):
-    return response.response_builder(
+    return response.Response(
         200,
         "OK",
         body=request.header.user_agent if request.header else None,
@@ -35,18 +35,18 @@ def user_agent_echo(request: request.Request):
                 request.header.user_agent or "" if request.header else ""
             ),
         ),
-    ).encode()
+    )
 
 
 @app.route(r"^/files/(?P<path_param>\w+)$")
 def get_file(request: request.Request):
     print(f"\n\n Env: {request.env}")
-    return response.response_builder(200, "OK").encode()
+    return response.Response(200, "OK")
 
 
 @app.route(r"^/$")
 def index(request: request.Request):
-    return response.response_builder(200, "OK").encode()
+    return response.Response(200, "OK")
 
 
 @dataclass

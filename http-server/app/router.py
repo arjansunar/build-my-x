@@ -4,13 +4,13 @@ from app import request, response
 
 
 class Router:
-    route_map: dict[str, Callable[[request.Request], bytes]] = {}
+    route_map: dict[str, Callable[[request.Request], response.Response]] = {}
 
-    def add_route(self, path: str, handler: Callable[[request.Request], bytes]):
+    def add_route(self, path: str, handler: Callable[[request.Request], response.Response]):
         self.route_map[path] = handler
 
     def route(self, path: str):
-        def decorator(func: Callable[[request.Request], bytes]):
+        def decorator(func: Callable[[request.Request], response.Response]):
             self.route_map[path] = func
             return func  # Return the decorated function
 
@@ -22,6 +22,6 @@ class Router:
             # pprint({"req": request, "path": path})
             if match:
                 request.params = match.groupdict()
-                return handler(request)
+                return handler(request).build().encode()
         # none path matched
         return response.response_builder(404, "Not Found").encode()
