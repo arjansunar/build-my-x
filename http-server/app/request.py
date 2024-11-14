@@ -36,3 +36,4 @@ class Request:
     env: "Env"
     params: dict[str, str] = field(default_factory=dict)
     header: Header | None = None
+    body: str | None = None
