@@ -68,7 +68,7 @@ def create_file(request: request.Request):
         return response.Response(400, "Bad Request")
     file_path = f"{request.env.directory}/{filename}"
     utils.create_file_at_path(file_path, request.body)
-    return response.Response(201, "OK")
+    return response.Response(201, "Created")
 
 
 @dataclass
