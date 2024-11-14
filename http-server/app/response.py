@@ -6,12 +6,16 @@ from app import constants
 class Header:
     content_type: str
     content_length: int
+    content_encoding: str | None = None
 
     def dict(self):
-        return {
+        base = {
             "Content-Type": self.content_type,
             "Content-Length": self.content_length,
         }
+        if self.content_encoding:
+            base["Content-Encoding"] = self.content_encoding
+        return base
 
     def headers(self):
         return constants.CRLF.join(

@@ -12,6 +12,24 @@ app = router.Router()
 
 @app.get(path=r"^/echo/(?P<path_param>\w+)$")
 def echo(request: request.Request):
+
+    accept_encoding: str | None = None
+    if request.header:
+        accept_encoding = request.header.accept_encoding
+
+    if accept_encoding in request.env.available_encoding:
+        return response.Response(
+            200,
+            "OK",
+            header=response.Header(
+                content_type="text/plain",
+                content_length=len(request.params.get("path_param", "")),
+                content_encoding=accept_encoding,
+            ),
+            body=request.params.get("path_param", ""),
+        )
+
+
     return response.Response(
         200,
         "OK",
@@ -74,6 +92,7 @@ def create_file(request: request.Request):
 @dataclass
 class Env:
     directory: str | None
+    available_encoding: list[str] 
 
 
 def main():
@@ -87,7 +106,7 @@ def main():
         while True:
             conn, _ = server_socket.accept()  # wait for client
             client_thread = threading.Thread(
-                target=handle_connection, args=(conn, Env(directory=directory))
+                target=handle_connection, args=(conn, Env(directory=directory, available_encoding=['gzip']), )
             )
             client_thread.start()
     except KeyboardInterrupt:

@@ -15,6 +15,7 @@ def extract_request_parts(message: str):
 class Header:
     host: str | None
     user_agent: str | None
+    accept_encoding: str | None
 
     @classmethod
     def from_list(cls, data: list[str]):
@@ -26,7 +27,11 @@ class Header:
             ), f"headers must be in <key>:<value> format got {d}"
             key, value = split_header_line
             headers[key] = value
-        return cls(host=headers.get("Host"), user_agent=headers.get("User-Agent"))
+        return cls(
+            host=headers.get("Host"),
+            user_agent=headers.get("User-Agent"),
+            accept_encoding=headers.get("Accept-Encoding"),
+        )
 
 
 @dataclass
