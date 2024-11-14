@@ -1,25 +1,47 @@
 import re
-from typing import Callable
+from typing import Callable, Literal
 from app import request, response
 
 
 class Router:
-    route_map: dict[str, Callable[[request.Request], response.Response]] = {}
+    route_map: dict[
+        str,
+        tuple[Literal["GET", "POST"], Callable[[request.Request], response.Response]],
+    ] = {}
 
     def add_route(
-        self, path: str, handler: Callable[[request.Request], response.Response]
+        self,
+        path: str,
+        method: Literal["GET", "POST"],
+        handler: Callable[[request.Request], response.Response],
     ):
-        self.route_map[path] = handler
+        self.route_map[path] = (method, handler)
 
-    def route(self, path: str):
+    def route(self, path: str, method: Literal["GET", "POST"] = "GET"):
         def decorator(func: Callable[[request.Request], response.Response]):
-            self.route_map[path] = func
+            self.route_map[path] = (method, func)
+            return func  # Return the decorated function
+
+        return decorator
+
+    def post(self, path: str):
+        def decorator(func: Callable[[request.Request], response.Response]):
+            self.route_map[path] = ("POST", func)
+            return func  # Return the decorated function
+
+        return decorator
+
+    def get(self, path: str):
+        def decorator(func: Callable[[request.Request], response.Response]):
+            self.route_map[path] = ("GET", func)
             return func  # Return the decorated function
 
         return decorator
 
     def run(self, request: request.Request) -> bytes:
-        for path, handler in self.route_map.items():
+        for path, (method, handler) in self.route_map.items():
+            if request.method != method:
+                continue
             match = re.search(path, request.resource)
             # pprint({"req": request, "path": path})
             if match:

@@ -10,7 +10,7 @@ from app import constants, request, response, router
 app = router.Router()
 
 
-@app.route(path=r"^/echo/(?P<path_param>\w+)$")
+@app.get(path=r"^/echo/(?P<path_param>\w+)$")
 def echo(request: request.Request):
     return response.Response(
         200,
@@ -23,7 +23,7 @@ def echo(request: request.Request):
     )
 
 
-@app.route(r"^/user-agent$")
+@app.get(r"^/user-agent$")
 def user_agent_echo(request: request.Request):
     return response.Response(
         200,
@@ -38,7 +38,9 @@ def user_agent_echo(request: request.Request):
     )
 
 
-def get_file_at_path(path:str,):
+def get_file_at_path(
+    path: str,
+):
     try:
         with open(path, "rb") as f:
             return f.read()
@@ -48,25 +50,31 @@ def get_file_at_path(path:str,):
         print("An error occurred while reading the file.")
 
 
-@app.route(r"^/files/(?P<path_param>[\w./]+)$")
+@app.get(r"^/files/(?P<path_param>[\w./]+)$")
 def get_file(request: request.Request):
     file_path = request.params.get("path_param")
 
-    if file_path is None: 
+    if file_path is None:
         return response.Response(404, "Not Found")
     file_path = f"{request.env.directory}/{file_path}"
     file = get_file_at_path(file_path)
     if file is None:
         return response.Response(404, "Not Found")
     return response.Response(
-        200, "OK", header=response.Header(
-            constants.ContentType.octet_stream, len(file))
-        , body=file.decode()
+        200,
+        "OK",
+        header=response.Header(constants.ContentType.octet_stream, len(file)),
+        body=file.decode(),
     )
 
 
-@app.route(r"^/$")
+@app.get(r"^/$")
 def index(request: request.Request):
+    return response.Response(200, "OK")
+
+
+@app.post(r"/files/(?P<filename>[\w./]+)$")
+def create_file(request: request.Request):
     return response.Response(200, "OK")
 
 
