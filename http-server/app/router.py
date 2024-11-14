@@ -6,7 +6,9 @@ from app import request, response
 class Router:
     route_map: dict[str, Callable[[request.Request], response.Response]] = {}
 
-    def add_route(self, path: str, handler: Callable[[request.Request], response.Response]):
+    def add_route(
+        self, path: str, handler: Callable[[request.Request], response.Response]
+    ):
         self.route_map[path] = handler
 
     def route(self, path: str):
@@ -21,6 +23,7 @@ class Router:
             match = re.search(path, request.resource)
             # pprint({"req": request, "path": path})
             if match:
+                # pprint({"matched": match.groupdict(), "path": path})
                 request.params = match.groupdict()
                 return handler(request).build().encode()
         # none path matched

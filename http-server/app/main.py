@@ -38,10 +38,31 @@ def user_agent_echo(request: request.Request):
     )
 
 
-@app.route(r"^/files/(?P<path_param>\w+)$")
+def get_file_at_path(path:str,):
+    try:
+        with open(path, "rb") as f:
+            return f.read()
+    except FileNotFoundError:
+        print("The file was not found.")
+    except IOError:
+        print("An error occurred while reading the file.")
+
+
+@app.route(r"^/files/(?P<path_param>[\w./]+)$")
 def get_file(request: request.Request):
-    print(f"\n\n Env: {request.env}")
-    return response.Response(200, "OK")
+    file_path = request.params.get("path_param")
+
+    if file_path is None: 
+        return response.Response(404, "Not Found")
+    file_path = f"{request.env.directory}/{file_path}"
+    file = get_file_at_path(file_path)
+    if file is None:
+        return response.Response(404, "Not Found")
+    return response.Response(
+        200, "OK", header=response.Header(
+            constants.ContentType.octet_stream, len(file))
+        , body=file.decode()
+    )
 
 
 @app.route(r"^/$")
