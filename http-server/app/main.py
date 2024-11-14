@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import dataclass
+import gzip
 import re
 import socket
 import threading
@@ -30,15 +31,16 @@ def echo(request: request.Request):
             body=request.params.get("path_param", ""),
         )
 
+    compressed = gzip.compress(request.params.get("path_param", "").encode())
     return response.Response(
         200,
         "OK",
         header=response.Header(
             content_type="text/plain",
-            content_length=len(request.params.get("path_param", "")),
+            content_length=len(compressed),
             content_encoding=", ".join(list(intersection)),
         ),
-        body=request.params.get("path_param", ""),
+        body=compressed,
     )
 
 

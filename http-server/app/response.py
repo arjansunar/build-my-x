@@ -41,11 +41,13 @@ class Response:
     status: int
     reason_phrase: str
     header: Header | None = None
-    body: str | None = None
+    body: str | bytes | None = None
     version: str = "HTTP/1.1"
 
     def build(self):
         res = f"{self.version} {self.status} {self.reason_phrase}{constants.CRLF}{self.header.headers() if self.header else ''}{constants.CRLF}{constants.CRLF}"
-        if self.body:
+        if type(self.body) is str:
             res += f"{self.body}"
-        return res
+        if type(self.body) is bytes:
+            return b"".join([res.encode(), self.body])
+        return res.encode()

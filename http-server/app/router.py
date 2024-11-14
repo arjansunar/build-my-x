@@ -47,6 +47,6 @@ class Router:
             if match:
                 # pprint({"matched": match.groupdict(), "path": path})
                 request.params = match.groupdict()
-                return handler(request).build().encode()
+                return handler(request).build()
         # none path matched
         return response.response_builder(404, "Not Found").encode()
