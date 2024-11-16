@@ -277,8 +277,10 @@ class DnsMessage:
     def from_bytes(cls, b_msg: bytes):
         header, rest = Header.from_bytes(b_msg)
         questions: list[Question] = []
+        print(f"Header: \n {header=}\n {rest=} {len(b_msg)=} {len(rest)=}")
         for i in range(header.qcount):
             question, rest = Question.from_bytes(rest)
+            print(f"Question {i+1}: \n {question=} \n {rest=} {len(rest)=}")
             questions.append(question)
 
         answer, rest = Answer.from_bytes(rest, header.ancount)

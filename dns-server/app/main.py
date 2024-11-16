@@ -17,6 +17,9 @@ def dns_forwarding(buf: bytes, resolver: str):
     port = int(port)
     origin_msg = message.DnsMessage.from_bytes(buf)
     origin_msg.header.qcount = 1  # resolver can only handle one question at a time
+    print(f"Questions: \n--------------\n {origin_msg.questions}")
+    print(f"Qcount: {origin_msg.header.qcount}\n\n")
+    print(f"Raw buff: \n--------------\n {buf}")
     answer = message.Answer([])
     for question in origin_msg.questions:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -33,6 +36,8 @@ def dns_forwarding(buf: bytes, resolver: str):
             response, _ = sock.recvfrom(512)
             response_msg = message.DnsMessage.from_bytes(response)
             print(f"\n\n {response_msg=}\n\n")
+            if len(response_msg.answer.rrs) == 0:
+                continue
             answer.rrs.append(response_msg.answer.rrs[0])
 
     return message.DnsMessage(
