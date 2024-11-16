@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, cast
 
 from app import utils
@@ -101,6 +101,7 @@ class Label:
     length: int
 
     terminator: bytes = b"\x00"
+
     # @classmethod
     # def from_bytes(cls, b_msg: bytes):
     #     bio = io.BytesIO(b_msg)
@@ -108,6 +109,14 @@ class Label:
     #         name=bio.read(1),
     #         length=int.from_bytes(bio.read(), "big"),
     #     )
+    @staticmethod
+    def encode_labels(labels: list["Label"]):
+        return b"".join(
+            [
+                b"".join([label.to_bytes() for label in labels]),
+                Label.terminator,
+            ]
+        )
 
     def to_bytes(self):
         return b"".join([self.length.to_bytes(1, "big"), self.name.encode("utf-8")])
@@ -131,8 +140,7 @@ class Question:
         labels = [Label(name=part, length=len(part)) for part in parts]
         return b"".join(
             [
-                b"".join([label.to_bytes() for label in labels]),
-                Label.terminator,
+                Label.encode_labels(labels),
                 self.type.to_bytes(2, "big"),
                 self.klass.to_bytes(2, "big"),
             ]
@@ -140,9 +148,49 @@ class Question:
 
 
 @dataclass
+class ResourceRecords:
+    name: str
+    ttl: int  # 4 bytes
+    rdlength: int = field(init=False)  # 2 bytes
+    rdata: str
+    rdata_parts: list[str] = field(init=False)
+    type: int = 1
+    klass: int = 1
+
+    def __post_init__(self):
+        ip_parts = self.rdata.split(".")
+        self.rdata_parts = [part for part in ip_parts]
+        self.rdlength = len(self.rdata)
+
+    def encode(self):
+        parts = self.name.split(".")
+        labels = [Label(name=part, length=len(part)) for part in parts]
+        ip_bytes = b"".join([int(part).to_bytes(1, "big") for part in self.rdata_parts])
+        return b"".join(
+            [
+                Label.encode_labels(labels),
+                self.type.to_bytes(2, "big"),
+                self.klass.to_bytes(2, "big"),
+                self.ttl.to_bytes(4, "big"),
+                self.rdlength.to_bytes(2, "big"),
+                ip_bytes,
+            ]
+        )
+
+
+@dataclass
+class Answer:
+    rrs: list[ResourceRecords]
+
+    def encode(self):
+        return b"".join([rr.encode() for rr in self.rrs])
+
+
+@dataclass
 class DnsMessage:
     header: Header
     question: Question
+    answer: Answer
 
     @classmethod
     def from_bytes(cls, b_msg: bytes):
@@ -153,6 +201,16 @@ class DnsMessage:
             # TODO: implement this
             question=Question(
                 name="testing",
+            ),
+            # TODO: implement this | its mocked
+            answer=Answer(
+                rrs=[
+                    ResourceRecords(
+                        name="testing",
+                        ttl=0,
+                        rdata="127.0.0.1",
+                    )
+                ]
             ),
         )
 

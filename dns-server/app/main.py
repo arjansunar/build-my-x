@@ -28,11 +28,20 @@ def main():
                         rcode=0,
                     ),
                     qcount=1,
-                    ancount=0,
+                    ancount=1,
                     nscount=0,
                     arcount=0,
                 ),
                 question=message.Question(name="codecrafters.io"),
+                answer=message.Answer(
+                    rrs=[
+                        message.ResourceRecords(
+                            name="codecrafters.io",
+                            ttl=60,
+                            rdata="8.8.8.8",
+                        )
+                    ]
+                ),
             )
 
             response = example_response.encode()
