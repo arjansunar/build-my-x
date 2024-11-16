@@ -32,11 +32,13 @@ def main():
                     nscount=0,
                     arcount=0,
                 ),
-                question=message.Question(msg.question.name),
+                questions=[message.Question(msg.questions[0].name)],
                 answer=message.Answer(
                     rrs=[
                         message.ResourceRecords(
-                            name=msg.question.name, ttl=60, rdata="8.8.8.8"
+                            name=msg.questions[0].name,
+                            ttl=60,
+                            rdata="8.8.8.8",
                         )
                     ]
                 ),

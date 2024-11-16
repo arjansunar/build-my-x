@@ -266,21 +266,29 @@ class Answer:
 @dataclass
 class DnsMessage:
     header: Header
-    question: Question
+    questions: list[Question]
     answer: Answer
 
     @classmethod
     def from_bytes(cls, b_msg: bytes):
         header, rest = Header.from_bytes(b_msg)
-        question, rest = Question.from_bytes(rest)
+        questions: list[Question] = []
+        for i in range(header.qcount):
+            question, rest = Question.from_bytes(rest)
+            questions.append(question)
+
         answer, rest = Answer.from_bytes(rest, header.ancount)
         return cls(
             header=header,
-            question=question,
+            questions=questions,
             answer=answer,
         )
 
     def encode(self) -> bytes:
         return b"".join(
-            [self.header.encode(), self.question.encode(), self.answer.encode()]
+            [
+                self.header.encode(),
+                b"".join([question.encode() for question in self.questions]),
+                self.answer.encode(),
+            ]
         )
