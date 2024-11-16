@@ -14,6 +14,7 @@ def main():
         try:
             buf, source = udp_socket.recvfrom(512)
             msg = message.DnsMessage.from_bytes(buf)
+
             response_msg = message.DnsMessage(
                 header=message.Header(
                     id=msg.header.id,
@@ -27,19 +28,22 @@ def main():
                         z=0,
                         rcode=0 if msg.header.flags.opcode == 0 else 4,
                     ),
-                    qcount=1,
-                    ancount=1,
+                    qcount=msg.header.qcount,
+                    ancount=msg.header.qcount,
                     nscount=0,
                     arcount=0,
                 ),
-                questions=[message.Question(msg.questions[0].name)],
+                questions=[
+                    message.Question(name=question.name) for question in msg.questions
+                ],
                 answer=message.Answer(
                     rrs=[
                         message.ResourceRecords(
-                            name=msg.questions[0].name,
+                            name=question.name,
                             ttl=60,
                             rdata="8.8.8.8",
                         )
+                        for question in msg.questions
                     ]
                 ),
             )
