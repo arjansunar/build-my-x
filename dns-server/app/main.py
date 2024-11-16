@@ -27,11 +27,12 @@ def main():
                         z=0,
                         rcode=0,
                     ),
-                    qdcount=0,
+                    qcount=1,
                     ancount=0,
                     nscount=0,
                     arcount=0,
-                )
+                ),
+                question=message.Question(name="codecrafters.io"),
             )
 
             response = example_response.encode()

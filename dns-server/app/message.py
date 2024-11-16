@@ -59,7 +59,7 @@ class Flags:
 class Header:
     id: int
     flags: Flags
-    qdcount: int
+    qcount: int
     ancount: int
     nscount: int
     arcount: int
@@ -69,14 +69,14 @@ class Header:
         b_io = io.BytesIO(b_msg)
         id = int.from_bytes(b_io.read(2), "big")
         flags = Flags.from_bytes(b_io.read(2))
-        qdcount = int.from_bytes(b_io.read(2), "big")
+        qcount = int.from_bytes(b_io.read(2), "big")
         ancount = int.from_bytes(b_io.read(2), "big")
         nscount = int.from_bytes(b_io.read(2), "big")
         arcount = int.from_bytes(b_io.read(2), "big")
         return cls(
             id=id,
             flags=flags,
-            qdcount=qdcount,
+            qcount=qcount,
             ancount=ancount,
             nscount=nscount,
             arcount=arcount,
@@ -87,7 +87,7 @@ class Header:
             [
                 self.id.to_bytes(2, "big"),
                 self.flags.encode(),
-                self.qdcount.to_bytes(2, "big"),
+                self.qcount.to_bytes(2, "big"),
                 self.ancount.to_bytes(2, "big"),
                 self.nscount.to_bytes(2, "big"),
                 self.arcount.to_bytes(2, "big"),
@@ -96,14 +96,65 @@ class Header:
 
 
 @dataclass
+class Label:
+    name: str
+    length: int
+
+    terminator: bytes = b"\x00"
+    # @classmethod
+    # def from_bytes(cls, b_msg: bytes):
+    #     bio = io.BytesIO(b_msg)
+    #     return cls(
+    #         name=bio.read(1),
+    #         length=int.from_bytes(bio.read(), "big"),
+    #     )
+
+    def to_bytes(self):
+        return b"".join([self.length.to_bytes(1, "big"), self.name.encode("utf-8")])
+
+
+@dataclass
+class Question:
+    name: str
+    type: int = 1
+    klass: int = 1
+
+    # @classmethod
+    # def from_bytes(cls, b_msg: bytes):
+    #     return cls(
+    #         name= b_msg[:2],
+    #         type=int.from_bytes(b_msg[2:4], "big"),
+    #         klass=int.from_bytes(b_msg[4:6], "big"),
+    #     )
+    def encode(self):
+        parts = self.name.split(".")
+        labels = [Label(name=part, length=len(part)) for part in parts]
+        return b"".join(
+            [
+                b"".join([label.to_bytes() for label in labels]),
+                Label.terminator,
+                self.type.to_bytes(2, "big"),
+                self.klass.to_bytes(2, "big"),
+            ]
+        )
+
+
+@dataclass
 class DnsMessage:
     header: Header
+    question: Question
 
     @classmethod
     def from_bytes(cls, b_msg: bytes):
         b_io = io.BytesIO(b_msg)
         b_header = b_io.read(12)
-        return cls(header=Header.from_bytes(b_header))
+        return cls(
+            header=Header.from_bytes(b_header),
+            # TODO: implement this
+            question=Question(
+                name="testing",
+            ),
+        )
 
     def encode(self) -> bytes:
-        return self.header.encode()
+        return b"".join([self.header.encode(), self.question.encode()])
