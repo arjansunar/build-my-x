@@ -216,7 +216,11 @@ class ResourceRecords:
         klass = int.from_bytes(rest_bio.read(2), "big")
         ttl = int.from_bytes(rest_bio.read(4), "big")
         rdlength = int.from_bytes(rest_bio.read(2), "big")
-        rdata = rest_bio.read(rdlength).decode()
+        parts: list[int] = []
+        for i in range(rdlength):
+            parts.append(int.from_bytes(rest_bio.read(1), "big"))
+
+        rdata = ".".join([str(part) for part in parts])
         return (
             cls(
                 name=".".join([label.name for label in labels]),
