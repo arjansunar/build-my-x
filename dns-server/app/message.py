@@ -160,7 +160,7 @@ class ResourceRecords:
     def __post_init__(self):
         ip_parts = self.rdata.split(".")
         self.rdata_parts = [part for part in ip_parts]
-        self.rdlength = len(self.rdata)
+        self.rdlength = len(self.rdata_parts)
 
     def encode(self):
         parts = self.name.split(".")
