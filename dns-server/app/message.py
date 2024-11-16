@@ -65,7 +65,7 @@ class Header:
     arcount: int
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes) -> "Header":
+    def from_bytes(cls, b_msg: bytes):
         b_io = io.BytesIO(b_msg)
         id = int.from_bytes(b_io.read(2), "big")
         flags = Flags.from_bytes(b_io.read(2))
@@ -73,13 +73,16 @@ class Header:
         ancount = int.from_bytes(b_io.read(2), "big")
         nscount = int.from_bytes(b_io.read(2), "big")
         arcount = int.from_bytes(b_io.read(2), "big")
-        return cls(
-            id=id,
-            flags=flags,
-            qcount=qcount,
-            ancount=ancount,
-            nscount=nscount,
-            arcount=arcount,
+        return (
+            cls(
+                id=id,
+                flags=flags,
+                qcount=qcount,
+                ancount=ancount,
+                nscount=nscount,
+                arcount=arcount,
+            ),
+            b_io.read(),
         )
 
     def encode(self) -> bytes:
@@ -129,6 +132,27 @@ class Label:
             ]
         )
 
+    @staticmethod
+    def extract_label_sequence(b_msg: bytes):
+        """
+        Extracts out the label sequence and returns remaining bytes from the message
+        """
+        terminator_idx = b_msg.find(Label.terminator)
+        b_labels = b_msg[:terminator_idx]
+        remaining = b_msg[terminator_idx + 1 :]
+        b_label_size = len(b_labels)
+
+        labels: list[Label] = []
+        current_bytes: bytes | io.BytesIO = b_labels
+        while True:
+            label, left = Label.from_bytes(current_bytes)
+            labels.append(label)
+            if left.tell() == b_label_size:
+                break
+            current_bytes = left
+
+        return labels, remaining
+
     def to_bytes(self):
         return b"".join([self.length.to_bytes(1, "big"), self.name.encode("utf-8")])
 
@@ -141,27 +165,15 @@ class Question:
 
     @classmethod
     def from_bytes(cls, b_msg: bytes):
-        terminator_idx = b_msg.find(Label.terminator)
-
-        b_labels = b_msg[:terminator_idx]
-        rest = b_msg[terminator_idx + 1 :]
-        b_label_size = len(b_labels)
-
-        labels: list[Label] = []
-        current_bytes: bytes | io.BytesIO = b_labels
-        while True:
-            label, left = Label.from_bytes(current_bytes)
-            labels.append(label)
-            if left.tell() == b_label_size:
-                break
-            current_bytes = left
-
+        labels, rest = Label.extract_label_sequence(b_msg)
         rest_bio = io.BytesIO(rest)
-
-        return cls(
-            name=".".join([label.name for label in labels]),
-            klass=int.from_bytes(rest_bio.read(2), "big"),
-            type=int.from_bytes(rest_bio.read(2), "big"),
+        return (
+            cls(
+                name=".".join([label.name for label in labels]),
+                klass=int.from_bytes(rest_bio.read(2), "big"),
+                type=int.from_bytes(rest_bio.read(2), "big"),
+            ),
+            rest_bio.read(),
         )
 
     def encode(self):
@@ -180,16 +192,42 @@ class Question:
 class ResourceRecords:
     name: str
     ttl: int  # 4 bytes
-    rdlength: int = field(init=False)  # 2 bytes
     rdata: str
     rdata_parts: list[str] = field(init=False)
+    rdlength: int | None = None  # 2 bytes
     type: int = 1
     klass: int = 1
 
     def __post_init__(self):
         ip_parts = self.rdata.split(".")
         self.rdata_parts = [part for part in ip_parts]
-        self.rdlength = len(self.rdata_parts)
+
+    def get_rdlength(self):
+        if self.rdlength is None:
+            self.rdlength = len(self.rdata_parts)
+        return self.rdlength
+
+    @classmethod
+    def from_bytes(cls, b_msg: bytes):
+        labels, rest = Label.extract_label_sequence(b_msg)
+        rest_bio = io.BytesIO(rest)
+
+        type = int.from_bytes(rest_bio.read(2), "big")
+        klass = int.from_bytes(rest_bio.read(2), "big")
+        ttl = int.from_bytes(rest_bio.read(4), "big")
+        rdlength = int.from_bytes(rest_bio.read(2), "big")
+        rdata = rest_bio.read(rdlength).decode()
+        return (
+            cls(
+                name=".".join([label.name for label in labels]),
+                type=type,
+                klass=klass,
+                ttl=ttl,
+                rdata=rdata,
+                rdlength=rdlength,
+            ),
+            rest_bio.read(),
+        )
 
     def encode(self):
         parts = self.name.split(".")
@@ -201,7 +239,7 @@ class ResourceRecords:
                 self.type.to_bytes(2, "big"),
                 self.klass.to_bytes(2, "big"),
                 self.ttl.to_bytes(4, "big"),
-                self.rdlength.to_bytes(2, "big"),
+                self.get_rdlength().to_bytes(2, "big"),
                 ip_bytes,
             ]
         )
@@ -210,6 +248,16 @@ class ResourceRecords:
 @dataclass
 class Answer:
     rrs: list[ResourceRecords]
+
+    @classmethod
+    def from_bytes(cls, b_msg: bytes, ancount: int):
+        count = 0
+        rrs: list[ResourceRecords] = []
+        while count < ancount:
+            rr, b_msg = ResourceRecords.from_bytes(b_msg)
+            rrs.append(rr)
+            count += 1
+        return cls(rrs), b_msg
 
     def encode(self):
         return b"".join([rr.encode() for rr in self.rrs])
@@ -223,24 +271,13 @@ class DnsMessage:
 
     @classmethod
     def from_bytes(cls, b_msg: bytes):
-        b_io = io.BytesIO(b_msg)
-        b_header = b_io.read(12)
+        header, rest = Header.from_bytes(b_msg)
+        question, rest = Question.from_bytes(rest)
+        answer, rest = Answer.from_bytes(rest, header.ancount)
         return cls(
-            header=Header.from_bytes(b_header),
-            # TODO: implement this
-            question=Question(
-                name="testing",
-            ),
-            # TODO: implement this | its mocked
-            answer=Answer(
-                rrs=[
-                    ResourceRecords(
-                        name="testing",
-                        ttl=0,
-                        rdata="127.0.0.1",
-                    )
-                ]
-            ),
+            header=header,
+            question=question,
+            answer=answer,
         )
 
     def encode(self) -> bytes:

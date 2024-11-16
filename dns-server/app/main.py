@@ -32,17 +32,18 @@ def main():
                     nscount=0,
                     arcount=0,
                 ),
-                question=message.Question(name="codecrafters.io"),
+                question=message.Question(msg.question.name),
                 answer=message.Answer(
                     rrs=[
                         message.ResourceRecords(
-                            name="codecrafters.io",
-                            ttl=60,
-                            rdata="8.8.8.8",
+                            name=msg.question.name, ttl=60, rdata="8.8.8.8"
                         )
                     ]
                 ),
             )
+
+            print(f"Received message: {msg}")
+            print(f"Sending response: {response_msg}")
 
             response = response_msg.encode()
             udp_socket.sendto(response, source)
