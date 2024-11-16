@@ -1,6 +1,56 @@
+import argparse
 import socket
+from typing import Any, cast
 
 from app import message
+
+
+def parse_args() -> str | None:
+    parser = argparse.ArgumentParser()
+    _ = parser.add_argument("--resolver")
+    args = parser.parse_args()
+    return cast(str | None, args.resolver)
+
+
+def dns_forwarding(origin: tuple[bytes, Any], resolver: str):
+    buf, source = origin
+    host, port = resolver.split(":")
+    origin_msg = message.DnsMessage.from_bytes(buf)
+    print(f"\n\n {origin_msg=} {host=}, {port=}\n\n")
+    for i in range(origin_msg.header.qcount):
+        question = origin_msg.questions[i]
+        print(f"\n\n {question=}\n\n")
+
+        req_msg = message.DnsMessage(
+            header=message.Header(
+                id=origin_msg.header.id,
+                flags=message.Flags(
+                    qr=origin_msg.header.flags.qr,
+                    opcode=origin_msg.header.flags.opcode,
+                    aa=0,
+                    tc=0,
+                    rd=origin_msg.header.flags.rd,
+                    ra=0,
+                    z=0,
+                    rcode=0 if origin_msg.header.flags.opcode == 0 else 4,
+                ),
+                qcount=1,
+                ancount=0,
+                nscount=0,
+                arcount=0,
+            ),
+            questions=[question],
+            answer=message.Answer(rrs=[]),
+        )
+
+        print(f"\n\n {req_msg=}\n\n")
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            _ = sock.sendto(req_msg.encode(), (host, port))
+            response, _ = sock.recvfrom(512)
+            print(f"\n\n {response=}")
+            response_msg = message.DnsMessage.from_bytes(response)
+            print(f"\n\n {response_msg=}")
 
 
 def main():
@@ -14,6 +64,13 @@ def main():
         try:
             buf, source = udp_socket.recvfrom(512)
             msg = message.DnsMessage.from_bytes(buf)
+
+            resolver = parse_args()
+            print(f"\n\n {resolver=}\n\n")
+            if resolver is not None:
+                dns_forwarding(origin=(buf, source), resolver=resolver)
+
+            print(f"\n\n Resolver: {resolver=}\n\n")
 
             response_msg = message.DnsMessage(
                 header=message.Header(
