@@ -215,4 +215,6 @@ class DnsMessage:
         )
 
     def encode(self) -> bytes:
-        return b"".join([self.header.encode(), self.question.encode()])
+        return b"".join(
+            [self.header.encode(), self.question.encode(), self.answer.encode()]
+        )
