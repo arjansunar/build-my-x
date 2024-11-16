@@ -102,13 +102,24 @@ class Label:
 
     terminator: bytes = b"\x00"
 
-    # @classmethod
-    # def from_bytes(cls, b_msg: bytes):
-    #     bio = io.BytesIO(b_msg)
-    #     return cls(
-    #         name=bio.read(1),
-    #         length=int.from_bytes(bio.read(), "big"),
-    #     )
+    @staticmethod
+    def parse(b_msg: bytes | io.BytesIO):
+        if isinstance(b_msg, io.BytesIO):
+            bio = b_msg
+        else:
+            bio = io.BytesIO(b_msg)
+        length = int.from_bytes(bio.read(1), "big")
+        return (
+            bio.read(length).decode(),
+            length,
+            bio,
+        )
+
+    @classmethod
+    def from_bytes(cls, b_msg: bytes | io.BytesIO):
+        name, length, left = cls.parse(b_msg)
+        return cls(name, length), left
+
     @staticmethod
     def encode_labels(labels: list["Label"]):
         return b"".join(
@@ -128,13 +139,31 @@ class Question:
     type: int = 1
     klass: int = 1
 
-    # @classmethod
-    # def from_bytes(cls, b_msg: bytes):
-    #     return cls(
-    #         name= b_msg[:2],
-    #         type=int.from_bytes(b_msg[2:4], "big"),
-    #         klass=int.from_bytes(b_msg[4:6], "big"),
-    #     )
+    @classmethod
+    def from_bytes(cls, b_msg: bytes):
+        terminator_idx = b_msg.find(Label.terminator)
+
+        b_labels = b_msg[:terminator_idx]
+        rest = b_msg[terminator_idx + 1 :]
+        b_label_size = len(b_labels)
+
+        labels: list[Label] = []
+        current_bytes: bytes | io.BytesIO = b_labels
+        while True:
+            label, left = Label.from_bytes(current_bytes)
+            labels.append(label)
+            if left.tell() == b_label_size:
+                break
+            current_bytes = left
+
+        rest_bio = io.BytesIO(rest)
+
+        return cls(
+            name=".".join([label.name for label in labels]),
+            klass=int.from_bytes(rest_bio.read(2), "big"),
+            type=int.from_bytes(rest_bio.read(2), "big"),
+        )
+
     def encode(self):
         parts = self.name.split(".")
         labels = [Label(name=part, length=len(part)) for part in parts]
