@@ -14,18 +14,18 @@ def main():
         try:
             buf, source = udp_socket.recvfrom(512)
             msg = message.DnsMessage.from_bytes(buf)
-            example_response = message.DnsMessage(
+            response_msg = message.DnsMessage(
                 header=message.Header(
                     id=msg.header.id,
                     flags=message.Flags(
                         qr=message.QR_REPLY_PACKET,
-                        opcode=0,
+                        opcode=msg.header.flags.opcode,
                         aa=0,
                         tc=0,
-                        rd=0,
+                        rd=msg.header.flags.rd,
                         ra=0,
                         z=0,
-                        rcode=0,
+                        rcode=0 if msg.header.flags.opcode == 0 else 4,
                     ),
                     qcount=1,
                     ancount=1,
@@ -44,7 +44,7 @@ def main():
                 ),
             )
 
-            response = example_response.encode()
+            response = response_msg.encode()
             udp_socket.sendto(response, source)
         except Exception as e:
             print(f"Error receiving data: {e}")
