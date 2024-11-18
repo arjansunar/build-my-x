@@ -32,7 +32,6 @@ def dns_forwarding(buf: bytes, resolver: str):
             )
             response, _ = sock.recvfrom(512)
             response_msg = message.DnsMessage.from_bytes(response)
-            print(f"\n\n {response_msg=}\n\n")
             if len(response_msg.answer.rrs) == 0:
                 continue
             answer.rrs.append(response_msg.answer.rrs[0])
@@ -42,13 +41,13 @@ def dns_forwarding(buf: bytes, resolver: str):
             id=origin_msg.header.id,
             flags=message.Flags(
                 qr=message.QR_REPLY_PACKET,
-                opcode=0,
+                opcode=origin_msg.header.flags.opcode,
                 aa=0,
                 tc=0,
-                rd=0,
+                rd=origin_msg.header.flags.rd,
                 ra=0,
                 z=0,
-                rcode=0,
+                rcode=0 if origin_msg.header.flags.opcode == 0 else 4,
             ),
             qcount=len(origin_msg.questions),
             ancount=len(answer.rrs),

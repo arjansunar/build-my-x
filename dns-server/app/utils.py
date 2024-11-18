@@ -24,3 +24,22 @@ def extract_dns_offset(bytes: bytes):
     offset <<= 8
     offset |= bytes[1]
     return offset
+
+
+def parse_domain(buf: bytes, i: int = 0) -> tuple[str, int]:
+    parts: list[str] = []
+    while True:
+        if buf[i] & OFFSET_MASK:
+            offset = ((buf[i] & ~OFFSET_MASK) << 8) + buf[i + 1]
+            domain, _ = parse_domain(buf, offset)
+            parts.append(domain)
+            return ".".join(parts), i + 2
+
+        name_len = buf[i]
+        i += 1
+        if name_len == 0:
+            break
+        name = buf[i : i + name_len].decode()
+        i += name_len
+        parts.append(name)
+    return ".".join(parts), i

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import struct
 from typing import Literal, cast
 
 from app import utils
@@ -82,7 +83,7 @@ class Header:
                 nscount=nscount,
                 arcount=arcount,
             ),
-            b_io.read(),
+            b_io.tell(),
         )
 
     def encode(self) -> bytes:
@@ -164,16 +165,16 @@ class Question:
     klass: int = 1
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes, r_msg: bytes):
-        labels, rest = Label.extract_label_sequence(b_msg, r_msg)
-        rest_bio = io.BytesIO(rest)
+    def from_bytes(cls, r_msg: bytes, idx: int):
+        domain, idx = utils.parse_domain(r_msg,idx )
+        record_type, record_class = struct.unpack("!hh", r_msg[idx : idx + 4])
         return (
             cls(
-                name=".".join([label.name for label in labels]),
-                klass=int.from_bytes(rest_bio.read(2), "big"),
-                type=int.from_bytes(rest_bio.read(2), "big"),
+                name=domain,
+                type=record_type,
+                klass=record_class,
             ),
-            rest_bio.read(),
+            idx + 4,
         )
 
     def encode(self):
@@ -208,9 +209,9 @@ class ResourceRecords:
         return self.rdlength
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes, r_msg: bytes):
-        labels, rest = Label.extract_label_sequence(b_msg, r_msg)
-        rest_bio = io.BytesIO(rest)
+    def from_bytes(cls,  idx: int, r_msg: bytes):
+        domain , idx = utils.parse_domain(r_msg, idx)
+        rest_bio = io.BytesIO(r_msg[idx:])
 
         type = int.from_bytes(rest_bio.read(2), "big")
         klass = int.from_bytes(rest_bio.read(2), "big")
@@ -223,14 +224,14 @@ class ResourceRecords:
         rdata = ".".join([str(part) for part in parts])
         return (
             cls(
-                name=".".join([label.name for label in labels]),
+                name=domain,
                 type=type,
                 klass=klass,
                 ttl=ttl,
                 rdata=rdata,
                 rdlength=rdlength,
             ),
-            rest_bio.read(),
+            rest_bio.tell(),
         )
 
     def encode(self):
@@ -254,14 +255,14 @@ class Answer:
     rrs: list[ResourceRecords]
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes, ancount: int, r_msg: bytes  ):
+    def from_bytes(cls, idx: int, ancount: int, r_msg: bytes  ):
         count = 0
         rrs: list[ResourceRecords] = []
         while count < ancount:
-            rr, b_msg = ResourceRecords.from_bytes(b_msg, r_msg)
+            rr, idx = ResourceRecords.from_bytes(idx, r_msg)
             rrs.append(rr)
             count += 1
-        return cls(rrs), b_msg
+        return cls(rrs), idx
 
     def encode(self):
         return b"".join([rr.encode() for rr in self.rrs])
@@ -275,13 +276,15 @@ class DnsMessage:
 
     @classmethod
     def from_bytes(cls, b_msg: bytes):
-        header, rest = Header.from_bytes(b_msg)
+        header, idx = Header.from_bytes(b_msg)
         questions: list[Question] = []
         for i in range(header.qcount):
-            question, rest = Question.from_bytes(rest, b_msg)
+            question, idx = Question.from_bytes(b_msg, idx)
             questions.append(question)
 
-        answer, rest = Answer.from_bytes(rest, header.ancount, b_msg)
+
+
+        answer, _ = Answer.from_bytes(idx, header.ancount, b_msg)
         return cls(
             header=header,
             questions=questions,
@@ -296,3 +299,12 @@ class DnsMessage:
                 self.answer.encode(),
             ]
         )
+
+    def __repr__(self) -> str:
+        return f"""
+        DNS MESSAGE
+        -----------
+        # Header: {self.header}
+        # Questions: {self.questions}
+        # Answer: {self.answer}
+        """
