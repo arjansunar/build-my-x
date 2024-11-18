@@ -217,7 +217,7 @@ class ResourceRecords:
         ttl = int.from_bytes(rest_bio.read(4), "big")
         rdlength = int.from_bytes(rest_bio.read(2), "big")
         parts: list[int] = []
-        for i in range(rdlength):
+        for _ in range(rdlength):
             parts.append(int.from_bytes(rest_bio.read(1), "big"))
 
         rdata = ".".join([str(part) for part in parts])
@@ -277,10 +277,8 @@ class DnsMessage:
     def from_bytes(cls, b_msg: bytes):
         header, rest = Header.from_bytes(b_msg)
         questions: list[Question] = []
-        print(f"Header: \n {header=}\n {rest=} {len(b_msg)=} {len(rest)=}")
         for i in range(header.qcount):
             question, rest = Question.from_bytes(rest, b_msg)
-            print(f"Question {i+1}: \n {question=} \n {rest=} {len(rest)=}")
             questions.append(question)
 
         answer, rest = Answer.from_bytes(rest, header.ancount, b_msg)
