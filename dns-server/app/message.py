@@ -133,7 +133,7 @@ class Label:
         )
 
     @staticmethod
-    def extract_label_sequence(b_msg: bytes):
+    def extract_label_sequence(b_msg: bytes, r_msg: bytes):
         """
         Extracts out the label sequence and returns remaining bytes from the message
         """
@@ -164,8 +164,8 @@ class Question:
     klass: int = 1
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes):
-        labels, rest = Label.extract_label_sequence(b_msg)
+    def from_bytes(cls, b_msg: bytes, r_msg: bytes):
+        labels, rest = Label.extract_label_sequence(b_msg, r_msg)
         rest_bio = io.BytesIO(rest)
         return (
             cls(
@@ -208,8 +208,8 @@ class ResourceRecords:
         return self.rdlength
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes):
-        labels, rest = Label.extract_label_sequence(b_msg)
+    def from_bytes(cls, b_msg: bytes, r_msg: bytes):
+        labels, rest = Label.extract_label_sequence(b_msg, r_msg)
         rest_bio = io.BytesIO(rest)
 
         type = int.from_bytes(rest_bio.read(2), "big")
@@ -254,11 +254,11 @@ class Answer:
     rrs: list[ResourceRecords]
 
     @classmethod
-    def from_bytes(cls, b_msg: bytes, ancount: int):
+    def from_bytes(cls, b_msg: bytes, ancount: int, r_msg: bytes  ):
         count = 0
         rrs: list[ResourceRecords] = []
         while count < ancount:
-            rr, b_msg = ResourceRecords.from_bytes(b_msg)
+            rr, b_msg = ResourceRecords.from_bytes(b_msg, r_msg)
             rrs.append(rr)
             count += 1
         return cls(rrs), b_msg
@@ -279,11 +279,11 @@ class DnsMessage:
         questions: list[Question] = []
         print(f"Header: \n {header=}\n {rest=} {len(b_msg)=} {len(rest)=}")
         for i in range(header.qcount):
-            question, rest = Question.from_bytes(rest)
+            question, rest = Question.from_bytes(rest, b_msg)
             print(f"Question {i+1}: \n {question=} \n {rest=} {len(rest)=}")
             questions.append(question)
 
-        answer, rest = Answer.from_bytes(rest, header.ancount)
+        answer, rest = Answer.from_bytes(rest, header.ancount, b_msg)
         return cls(
             header=header,
             questions=questions,
