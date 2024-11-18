@@ -102,27 +102,6 @@ class Header:
         )
 
 
-@dataclass
-class Label:
-    name: str
-    length: int
-    terminator: bytes = b"\x00"
-
-    @staticmethod
-    def encode_labels(labels: list["Label"]):
-        return b"".join(
-            [
-                b"".join([label.to_bytes() for label in labels]),
-                Label.terminator,
-            ]
-        )
-    
-
-    def to_bytes(self):
-        return b"".join([self.length.to_bytes(1, "big"), self.name.encode("utf-8")])
-
-
-
 
 @dataclass
 class Question:
@@ -200,12 +179,11 @@ class ResourceRecords:
         )
 
     def encode(self):
-        parts = self.name.split(".")
-        labels = [Label(name=part, length=len(part)) for part in parts]
         ip_bytes = b"".join([int(part).to_bytes(1, "big") for part in self.rdata_parts])
         return b"".join(
             [
-                Label.encode_labels(labels),
+                utils.encode_domain(self.name),
+                TERMINATOR,
                 self.type.to_bytes(2, "big"),
                 self.klass.to_bytes(2, "big"),
                 self.ttl.to_bytes(4, "big"),
