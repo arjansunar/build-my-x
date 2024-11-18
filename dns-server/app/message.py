@@ -102,7 +102,6 @@ class Header:
         )
 
 
-
 @dataclass
 class Question:
     name: str
@@ -111,7 +110,7 @@ class Question:
 
     @classmethod
     def from_bytes(cls, r_msg: bytes, idx: int):
-        domain, idx = utils.parse_domain(r_msg,idx )
+        domain, idx = utils.parse_domain(r_msg, idx)
         record_type, record_class = struct.unpack("!hh", r_msg[idx : idx + 4])
         return (
             cls(
@@ -153,8 +152,8 @@ class ResourceRecords:
         return self.rdlength
 
     @classmethod
-    def from_bytes(cls,  idx: int, r_msg: bytes):
-        domain , idx = utils.parse_domain(r_msg, idx)
+    def from_bytes(cls, idx: int, r_msg: bytes):
+        domain, idx = utils.parse_domain(r_msg, idx)
         rest_bio = io.BytesIO(r_msg[idx:])
 
         type = int.from_bytes(rest_bio.read(2), "big")
@@ -198,7 +197,7 @@ class Answer:
     rrs: list[ResourceRecords]
 
     @classmethod
-    def from_bytes(cls, idx: int, ancount: int, r_msg: bytes  ):
+    def from_bytes(cls, idx: int, ancount: int, r_msg: bytes):
         count = 0
         rrs: list[ResourceRecords] = []
         while count < ancount:
@@ -224,8 +223,6 @@ class DnsMessage:
         for i in range(header.qcount):
             question, idx = Question.from_bytes(b_msg, idx)
             questions.append(question)
-
-
 
         answer, _ = Answer.from_bytes(idx, header.ancount, b_msg)
         return cls(

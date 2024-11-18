@@ -7,6 +7,8 @@ def bits_to_bytes(bit_string: str):
 
 
 OFFSET_MASK = 0b11_00_00_00
+
+
 def is_dns_offset(bytes: bytes):
     # dns offset is 2 bytes long
     if len(bytes) < 2:
@@ -16,6 +18,7 @@ def is_dns_offset(bytes: bytes):
         return True
 
     return False
+
 
 def extract_dns_offset(bytes: bytes):
     # turn off first two bits
@@ -47,6 +50,9 @@ def parse_domain(buf: bytes, i: int = 0) -> tuple[str, int]:
 
 def encode_domain(domain: str) -> bytes:
     parts = domain.split(".")
-    return b"".join([
-        b"".join([len(part).to_bytes(1, "big"), part.encode("utf-8")]) for part in parts
-    ])
+    return b"".join(
+        [
+            b"".join([len(part).to_bytes(1, "big"), part.encode("utf-8")])
+            for part in parts
+        ]
+    )
