@@ -43,3 +43,10 @@ def parse_domain(buf: bytes, i: int = 0) -> tuple[str, int]:
         i += name_len
         parts.append(name)
     return ".".join(parts), i
+
+
+def encode_domain(domain: str) -> bytes:
+    parts = domain.split(".")
+    return b"".join([
+        b"".join([len(part).to_bytes(1, "big"), part.encode("utf-8")]) for part in parts
+    ])

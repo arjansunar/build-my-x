@@ -16,6 +16,9 @@ QR_REPLY_PACKET = 1
 QR_QUESTION_PACKET = 0
 
 
+TERMINATOR: bytes = b"\x00"
+
+
 @dataclass()
 class Flags:
     qr: ONE_BIT_INT
@@ -103,26 +106,7 @@ class Header:
 class Label:
     name: str
     length: int
-
     terminator: bytes = b"\x00"
-
-    @staticmethod
-    def parse(b_msg: bytes | io.BytesIO):
-        if isinstance(b_msg, io.BytesIO):
-            bio = b_msg
-        else:
-            bio = io.BytesIO(b_msg)
-        length = int.from_bytes(bio.read(1), "big")
-        return (
-            bio.read(length).decode(),
-            length,
-            bio,
-        )
-
-    @classmethod
-    def from_bytes(cls, b_msg: bytes | io.BytesIO):
-        name, length, left = cls.parse(b_msg)
-        return cls(name, length), left
 
     @staticmethod
     def encode_labels(labels: list["Label"]):
@@ -132,30 +116,12 @@ class Label:
                 Label.terminator,
             ]
         )
-
-    @staticmethod
-    def extract_label_sequence(b_msg: bytes, r_msg: bytes):
-        """
-        Extracts out the label sequence and returns remaining bytes from the message
-        """
-        terminator_idx = b_msg.find(Label.terminator)
-        b_labels = b_msg[:terminator_idx]
-        remaining = b_msg[terminator_idx + 1 :]
-        b_label_size = len(b_labels)
-
-        labels: list[Label] = []
-        current_bytes: bytes | io.BytesIO = b_labels
-        while True:
-            label, left = Label.from_bytes(current_bytes)
-            labels.append(label)
-            if left.tell() == b_label_size:
-                break
-            current_bytes = left
-
-        return labels, remaining
+    
 
     def to_bytes(self):
         return b"".join([self.length.to_bytes(1, "big"), self.name.encode("utf-8")])
+
+
 
 
 @dataclass
@@ -178,11 +144,10 @@ class Question:
         )
 
     def encode(self):
-        parts = self.name.split(".")
-        labels = [Label(name=part, length=len(part)) for part in parts]
         return b"".join(
             [
-                Label.encode_labels(labels),
+                utils.encode_domain(self.name),
+                TERMINATOR,
                 self.type.to_bytes(2, "big"),
                 self.klass.to_bytes(2, "big"),
             ]
