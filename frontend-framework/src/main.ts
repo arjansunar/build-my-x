@@ -1,7 +1,7 @@
 import { init } from "./framework";
-import { div } from "./framework/element";
+import { User } from "./framework/user";
 
 const firstName = "Arjan";
 const lastName = "Sunar";
 
-init("#app", div`Hello ${firstName} ${lastName}`);
+init("#app", User({ firstName, lastName }));
