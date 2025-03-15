@@ -8,10 +8,5 @@ const createElement =
     ),
   });
 
-const p = createElement("p");
-
-const firstName = "Marvin";
-const lastName = "Frachet";
-
-const { template } = p`Hello ${firstName} ${lastName} !`;
-console.log(template);
+export const p = createElement("p");
+export const div = createElement("div");
