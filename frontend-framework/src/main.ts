@@ -1,7 +1,4 @@
 import { init } from "./framework";
-import { User } from "./framework/user";
+import { Counter } from "./framework/counter";
 
-const firstName = "Arjan";
-const lastName = "Sunar";
-
-init("#app", User({ firstName, lastName }));
+init("#app", Counter());

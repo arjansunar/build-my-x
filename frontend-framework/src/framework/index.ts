@@ -25,7 +25,7 @@ export function createComponent({
 
   let previous: Component;
   // provides default state for the various components
-  const mappedMethods = (props) =>
+  const mappedMethods = (props: typeof initialState) =>
     Object.keys(methods).reduce(
       (acc, key) => ({
         ...acc,
@@ -45,8 +45,11 @@ export function createComponent({
       }),
       {},
     );
-  return (props) => {
-    previous = template({ ...props, methods: mappedMethods(props) });
+  return (props?: typeof initialState) => {
+    previous = template({
+      ...(props ?? initialState),
+      methods: mappedMethods(props),
+    });
     return previous;
   };
 }

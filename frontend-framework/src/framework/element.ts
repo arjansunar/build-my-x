@@ -28,7 +28,7 @@ function createElement(tagName: string) {
     return {
       type: "element",
       template: h(tagName, { on }, template),
-    };
+    } as const;
   };
 }
 
