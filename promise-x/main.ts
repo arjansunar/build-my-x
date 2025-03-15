@@ -14,11 +14,11 @@ class Promisible {
     execFn(this.onResolve, this.onReject);
   }
 
-  then(handleSuccess) {
+  then(handleSuccess: (value: unknown) => void) {
     this.promiseChain.push(handleSuccess);
     return this;
   }
-  catch(handleError) {
+  catch(handleError: (err: unknown) => void) {
     this.handleError = handleError;
     return this;
   }
