@@ -19,7 +19,9 @@ function createReducer(args: (string | EventHandler)[]) {
   };
 }
 
-function createElement(tagName: string) {
+type Tags = "div" | "p" | "button";
+
+function createElement(tagName: Tags) {
   return (
     strings: TemplateStringsArray,
     ...args: (string | EventHandler)[]
@@ -34,3 +36,4 @@ function createElement(tagName: string) {
 
 export const p = createElement("p");
 export const div = createElement("div");
+export const button = createElement("button");

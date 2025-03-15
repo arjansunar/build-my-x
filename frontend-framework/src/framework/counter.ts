@@ -1,5 +1,5 @@
 import { createComponent } from ".";
-import { div } from "../framework/element";
+import { button, div } from "../framework/element";
 import { onClick } from "./event";
 
 const initialState = { count: 0 };
@@ -19,7 +19,7 @@ function template({
   methods,
 }: typeof initialState & { methods: Method }) {
   // @ts-expect-error state is populated by our `framework`
-  return div`${onClick(() => methods.increament())} Count is: ${count.toString()}`;
+  return button`${onClick(() => methods.increament())} Count is: ${count.toString()}`;
 }
 
 export const Counter = createComponent({
