@@ -5,10 +5,12 @@ import { onClick } from "./event";
 const initialState = { count: 0 };
 
 const methods = {
-  increament: (state: typeof initialState) => ({
-    ...state,
-    count: state.count + 1,
-  }),
+  increament: (state: typeof initialState) => {
+    return {
+      ...state,
+      count: state.count + 1,
+    };
+  },
 } as const;
 type Method = typeof methods;
 

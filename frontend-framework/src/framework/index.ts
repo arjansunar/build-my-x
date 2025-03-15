@@ -12,21 +12,21 @@ export function init(selector: string, component: Component) {
 }
 
 let state = {};
-export function createComponent({
+export function createComponent<const S extends Record<string, any>>({
   template,
   methods = {},
-  initialState = {},
+  initialState = {} as S,
 }: {
   template: (...args: any[]) => Component;
   methods: Record<string, (...args: any[]) => any>;
-  initialState: Record<string, any>;
+  initialState: S;
 }) {
   state = initialState;
 
   let previous: Component;
   // provides default state for the various components
-  const mappedMethods = (props: typeof initialState) =>
-    Object.keys(methods).reduce(
+  const mappedMethods = (props: typeof initialState) => {
+    return Object.keys(methods).reduce(
       (acc, key) => ({
         ...acc,
         [key]: (...args) => {
@@ -45,10 +45,15 @@ export function createComponent({
       }),
       {},
     );
+  };
   return (props?: typeof initialState) => {
+    let _props = props ?? initialState;
+    if (!!props) {
+      state = _props;
+    }
     previous = template({
-      ...(props ?? initialState),
-      methods: mappedMethods(props),
+      ..._props,
+      methods: mappedMethods(_props),
     });
     return previous;
   };
