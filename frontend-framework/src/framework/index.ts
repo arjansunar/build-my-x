@@ -1,19 +1,29 @@
 import * as snabbdom from "snabbdom";
 const patch = snabbdom.init([snabbdom.eventListenersModule]);
 
-export function init(
-  selector: string,
-  component: { template: snabbdom.VNode },
-) {
+type Component = {
+  type: "element" | "event";
+  template: snabbdom.VNode;
+};
+
+export function init(selector: string, component: Component) {
   const app = document.querySelector(selector)!;
   patch(app, component.template);
 }
 
 let state = {};
-export function createComponent({ template, methods = {}, initialState = {} }) {
+export function createComponent({
+  template,
+  methods = {},
+  initialState = {},
+}: {
+  template: (...args: any[]) => Component;
+  methods: Record<string, (...args: any[]) => any>;
+  initialState: Record<string, any>;
+}) {
   state = initialState;
 
-  let previous;
+  let previous: Component;
   // provides default state for the various components
   const mappedMethods = (props) =>
     Object.keys(methods).reduce(
