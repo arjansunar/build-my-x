@@ -1,7 +1,17 @@
+import { createComponent } from ".";
 import { div } from "../framework/element";
 import { onClick } from "./event";
 
-export function User({
+const initialState = { firstName: "John", lastName: "Doe" };
+
+const methods = {
+  changeName: (state: typeof initialState, firstName: string) => ({
+    ...state,
+    firstName,
+  }),
+};
+
+function template({
   firstName,
   lastName,
 }: {
@@ -10,3 +20,9 @@ export function User({
 }) {
   return div`${onClick(() => alert(firstName))} Hello ${firstName} ${lastName}`;
 }
+
+export const User = createComponent({
+  template,
+  methods,
+  initialState,
+});

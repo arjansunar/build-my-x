@@ -8,3 +8,8 @@ export function init(
   const app = document.querySelector(selector)!;
   patch(app, component.template);
 }
+
+export const createComponent =
+  ({ template, methods = {}, initialState = {} }) =>
+  (props) =>
+    template(props);
