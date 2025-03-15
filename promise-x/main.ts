@@ -46,7 +46,7 @@ function simulatedNetworkFetch() {
     name: "Testing user",
   } as const;
 
-  if (Math.random() > 0.05) {
+  if (Math.random() > 0.5) {
     return {
       data,
       statusCode: 200,
@@ -71,7 +71,7 @@ function apiHandler() {
       } else {
         onResolve(res.data);
       }
-    }, 3000);
+    }, 1000);
   });
 }
 
