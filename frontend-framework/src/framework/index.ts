@@ -1,5 +1,5 @@
 import * as snabbdom from "snabbdom";
-const patch = snabbdom.init([]);
+const patch = snabbdom.init([snabbdom.eventListenersModule]);
 
 export function init(
   selector: string,

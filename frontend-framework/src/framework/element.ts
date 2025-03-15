@@ -1,22 +1,33 @@
 import { h } from "snabbdom";
+import { EventHandler } from "./event";
 
 const initialState = {
   template: "",
+  on: {},
 };
 
-function createReducer(args: string[]) {
-  return (acc: typeof initialState, currentString: string, index: number) => ({
-    ...acc,
-    template: acc.template + currentString + (args[index] || ""),
-  });
+function createReducer(args: (string | EventHandler)[]) {
+  return (acc: typeof initialState, currentString: string, index: number) => {
+    const currentArg = args[index];
+    if (currentArg && currentArg.type === "event") {
+      return { ...acc, on: { click: currentArg.click } };
+    }
+    return {
+      ...acc,
+      template: acc.template + currentString + (args[index] || ""),
+    };
+  };
 }
 
 function createElement(tagName: string) {
-  return (strings: TemplateStringsArray, ...args: string[]) => {
-    const { template } = strings.reduce(createReducer(args), initialState);
+  return (
+    strings: TemplateStringsArray,
+    ...args: (string | EventHandler)[]
+  ) => {
+    const { template, on } = strings.reduce(createReducer(args), initialState);
     return {
       type: "element",
-      template: h(tagName, {}, template),
+      template: h(tagName, { on }, template),
     };
   };
 }

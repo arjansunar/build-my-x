@@ -1,4 +1,5 @@
 import { div } from "../framework/element";
+import { onClick } from "./event";
 
 export function User({
   firstName,
@@ -7,5 +8,5 @@ export function User({
   firstName: string;
   lastName: string;
 }) {
-  return div`Hello ${firstName} ${lastName}`;
+  return div`${onClick(() => alert(firstName))} Hello ${firstName} ${lastName}`;
 }
