@@ -1,0 +1,7 @@
+{
+  "typeCheckingMode": "strict",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": true,
+  "extraPaths": ["./app"]
+}
