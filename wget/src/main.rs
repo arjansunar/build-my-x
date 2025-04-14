@@ -1,7 +1,7 @@
-use std::{error::Error, str::Bytes};
+use std::error::Error;
 
 use clap::Parser;
-use reqwest::{Client, header::CONTENT_LENGTH};
+use reqwest::Client;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 /// Wget clone written in Rust
