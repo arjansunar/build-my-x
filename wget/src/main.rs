@@ -7,13 +7,9 @@ struct Args {
     /// Url to download
     #[arg(short, long)]
     url: String,
-
 }
 
 fn main() {
     let args = Args::parse();
-
-    for _ in 0..args.count {
-        println!("Hello {}!", args.name);
-    }
+    println!("Hello {}!", args.url);
 }
