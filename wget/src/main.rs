@@ -34,7 +34,7 @@ async fn collect_buf(res: &mut Response) -> Result<Vec<u8>, Box<dyn Error>> {
     Ok(buf)
 }
 async fn save_to_file(buffer: Vec<u8>, file_path: &str) -> Result<(), Box<dyn Error>> {
-    let mut file = File::create(file_path).await?; // Creates or overwrites the file
+    let mut file = File::create(file_path).await?;
     file.write_all(&buffer).await?;
     Ok(())
 }
