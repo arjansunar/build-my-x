@@ -8,6 +8,11 @@ A lightweight, async command-line utility to download or view web content — wr
 - Optionally download the response to a file
 - Output is pipeable to other commands
 
+## TODO
+
+- [ ] Add progress bar
+- [ ] Better errors
+
 ## 🚀 Usage
 
 ```sh
