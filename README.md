@@ -10,6 +10,7 @@ A collection of projects that rebuild foundational technologies from scratch. In
 - Frontend Framework
 - Promise Implementation
 - Wget Clone
+- Redis Clone (wip)
 
 Each project is organized in its own directory with relevant documentation and source code.
 
