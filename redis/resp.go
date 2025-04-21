@@ -78,7 +78,17 @@ func (r *Resp) Read() (Value, error) {
 }
 
 func (r *Resp) readBulk() (Value, error) {
-	panic("unimplemented")
+	value := Value{}
+	value.typ = "bulk"
+	length, _, err := r.readInteger()
+	if err != nil {
+		return Value{}, err
+	}
+	bulk := make([]byte, length)
+	r.reader.Read(bulk)
+	value.bulk = string(bulk)
+	r.readLine()
+	return value, nil
 }
 
 func (r *Resp) readArray() (Value, error) {
