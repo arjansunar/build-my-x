@@ -147,11 +147,6 @@ func (v Value) marshalString() []byte {
 
 func (v Value) marshalNull() []byte {
 	return []byte("$-1\r\n")
-	// var bytes []byte
-	// bytes = append(bytes, NULL)
-	// bytes = append(bytes, '\r', '\n')
-	//
-	// return bytes
 }
 
 func (v Value) marshalError() []byte {

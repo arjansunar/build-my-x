@@ -12,6 +12,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("Listening on port :6379")
 
 	conn, err := l.Accept()
 	if err != nil {
@@ -23,7 +24,6 @@ func main() {
 
 	for {
 		resp := NewResp(conn)
-
 		value, err := resp.Read()
 		if err != nil {
 			fmt.Println(err)
@@ -40,15 +40,18 @@ func main() {
 			continue
 		}
 
-		writer := NewWriter(conn)
 		command := strings.ToUpper(value.array[0].bulk)
 		args := value.array[1:]
+
+		writer := NewWriter(conn)
+
 		handler, ok := Handlers[command]
 		if !ok {
 			fmt.Println("Invalid command: ", command)
 			writer.Write(Value{typ: "string", str: ""})
 			continue
 		}
+
 		result := handler(args)
 		writer.Write(result)
 	}
