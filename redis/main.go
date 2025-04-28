@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
+	"os"
 	"strings"
 )
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
 	l, err := net.Listen("tcp", ":6379")
 	if err != nil {
 		fmt.Println(err)
@@ -29,6 +33,8 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+
+		slog.Debug("Message received", "value", fmt.Sprintf("GOT: %v", value))
 
 		if value.typ != "array" {
 			fmt.Println("Invalid request, expected array")
