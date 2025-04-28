@@ -46,8 +46,33 @@ func get(args []Value) Value {
 	return Value{typ: "bulk", bulk: value}
 }
 
+var (
+	HSETs   = map[string]map[string]string{}
+	HSETsMu = sync.RWMutex{}
+)
+
+func hset(args []Value) Value {
+	if len(args) != 3 {
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'hset'"}
+	}
+
+	hash := args[0].bulk
+	key := args[1].bulk
+	value := args[1].bulk
+
+	HSETsMu.Lock()
+	if _, ok := HSETs[hash]; !ok {
+		HSETs[hash] = map[string]string{}
+	}
+	HSETs[hash][key] = value
+	HSETsMu.Unlock()
+
+	return Value{typ: "string", str: "OK"}
+}
+
 var Handlers = map[string]func([]Value) Value{
 	"PING": ping,
 	"SET":  set,
 	"GET":  get,
+	"HSET": hset,
 }
