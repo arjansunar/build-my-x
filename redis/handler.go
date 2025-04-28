@@ -70,9 +70,27 @@ func hset(args []Value) Value {
 	return Value{typ: "string", str: "OK"}
 }
 
+func hget(args []Value) Value {
+	if len(args) != 2 {
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'hget'"}
+	}
+
+	hash := args[0].bulk
+	key := args[1].bulk
+
+	SETsMu.Lock()
+	value, ok := HSETs[hash][key]
+	SETsMu.Unlock()
+	if !ok {
+		return Value{typ: "null"}
+	}
+	return Value{typ: "bulk", bulk: value}
+}
+
 var Handlers = map[string]func([]Value) Value{
 	"PING": ping,
 	"SET":  set,
 	"GET":  get,
 	"HSET": hset,
+	"HGET": hget,
 }
